@@ -1,0 +1,28 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - DOCS.org
+      - scripts/build-docs.sh
+      - .github/workflows/docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    name: pandoc to vimdoc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+      - run: just docs
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: regenerate vimdoc from DOCS.org"
+          file_pattern: "doc/org-preview.txt"

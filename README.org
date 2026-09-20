@@ -1,0 +1,78 @@
+* org-preview.nvim
+
+[[https://github.com/seflue/org-preview.nvim/actions/workflows/test.yml][https://github.com/seflue/org-preview.nvim/actions/workflows/test.yml/badge.svg]]
+
+Live browser preview for [[https://orgmode.org][Org]] files in Neovim. The current buffer is
+rendered on every change, unsaved, and pushed to the open tab.
+
+- No Node, no Python: the HTTP server is pure Lua on =vim.uv=, updates go
+  out as Server-Sent Events, the page swaps =<body>= in place and keeps
+  its scroll position.
+- pandoc does the Org → HTML conversion (TODO keywords, tags, tables,
+  footnotes, src blocks with highlighting, table of contents).
+- Styling is a list of stylesheet URLs; the default is
+  [[https://watercss.kognise.dev/][water.css]], which follows the OS light/dark setting.
+- Converters are pluggable: a backend is a command reading Org on stdin.
+
+* Requirements
+
+- Neovim ≥ 0.10 (=vim.system=, =vim.uv=, =vim.ui.open=); developed and
+  tested on 0.12
+- =pandoc= in =$PATH=
+
+* Install
+
+** lazy.nvim
+
+#+begin_src lua
+{
+  "seflue/org-preview.nvim",
+  ft = "org",
+  cmd = { "OrgPreview", "OrgPreviewToggle", "OrgPreviewStop" },
+  opts = {},
+}
+#+end_src
+
+=opts= lets lazy.nvim call =require("org-preview").setup()= for you.
+
+** Neovim 0.12+ (built-in vim.pack)
+
+#+begin_src lua
+vim.pack.add({ { src = "https://github.com/seflue/org-preview.nvim" } })
+require("org-preview").setup({})
+#+end_src
+
+* Use
+
+- =:OrgPreview= — start the server for the current buffer and open the
+  browser
+- =:OrgPreviewToggle= — stop if running, else start
+- =:OrgPreviewStop= — stop the server (also runs on =BufUnload= and
+  =VimLeavePre=); the next =:OrgPreview= reuses the same port, so open
+  tabs reconnect
+- =:checkhealth org-preview= — verify pandoc and the Neovim version
+
+* Configuration
+
+Defaults shown; pass any subset to =setup()=. See =:help org-preview= for
+details and how to add a backend.
+
+#+begin_src lua
+require("org-preview").setup({
+  host = "127.0.0.1",
+  port = 0,             -- 0 = free port per Neovim instance, kept across restarts
+  backend = "pandoc",   -- name of a built-in backend, or a backend table
+  css = { "https://cdn.jsdelivr.net/npm/water.css@2/out/water.css" },
+  debounce_ms = 300,
+  open = true,          -- open the browser when :OrgPreview starts the server
+})
+#+end_src
+
+* Development
+
+Run =just= for the menu: =just test= (mini.test, clones mini.nvim into
+=deps/= on first run), =just lint=, =just docs=.
+
+* License
+
+MIT license. See [[./LICENSE][LICENSE]].

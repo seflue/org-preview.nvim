@@ -1,0 +1,152 @@
+*org-preview.txt*                         Live browser preview for org buffers
+
+==============================================================================
+Table of Contents                              *org-preview-table-of-contents*
+
+1. Introduction                                     |org-preview-introduction|
+2. Requirements                                     |org-preview-requirements|
+3. Installation                                     |org-preview-installation|
+  - lazy.nvim                             |org-preview-installation-lazy.nvim|
+  - vim.pack (Neovim 0.12+) |org-preview-installation-vim.pack-(neovim-0.12+)|
+4. Commands                                             |org-preview-commands|
+5. Configuration                                   |org-preview-configuration|
+6. Backends                                             |org-preview-backends|
+7. Health                                                 |org-preview-health|
+8. Limitations                                       |org-preview-limitations|
+
+==============================================================================
+1. Introduction                                     *org-preview-introduction*
+
+`org-preview.nvim` renders the current Org buffer to HTML and serves it to a
+browser tab that updates live. Nothing needs to be saved: the buffer text is
+piped to the converter on every change (debounced), and the result is pushed to
+the page over Server-Sent Events. The page swaps its `<body>` in place, so the
+scroll position survives updates.
+
+The server is pure Lua on `vim.uv`. The only external dependency is the
+converter, `pandoc` by default.
+
+
+==============================================================================
+2. Requirements                                     *org-preview-requirements*
+
+- Neovim ≥ 0.10 (`vim.system`, `vim.uv`, `vim.ui.open`). Developed and
+    tested on 0.12.
+- `pandoc` in `$PATH`.
+
+
+==============================================================================
+3. Installation                                     *org-preview-installation*
+
+
+LAZY.NVIM                                 *org-preview-installation-lazy.nvim*
+
+>lua
+    {
+      "seflue/org-preview.nvim",
+      ft = "org",
+      cmd = { "OrgPreview", "OrgPreviewToggle", "OrgPreviewStop" },
+      opts = {},
+    }
+<
+
+
+VIM.PACK (NEOVIM 0.12+)     *org-preview-installation-vim.pack-(neovim-0.12+)*
+
+>lua
+    vim.pack.add({ { src = "https://github.com/seflue/org-preview.nvim" } })
+    require("org-preview").setup({})
+<
+
+
+==============================================================================
+4. Commands                                             *org-preview-commands*
+
+- `:OrgPreview` — start previewing the current buffer. Starts the server
+    if it is not running (and then opens the browser at
+    `http://<host>:<port>/` when `open` is true), renders once, and
+    re-renders on `TextChanged`, `TextChangedI` and `InsertLeave`. Errors
+    such as a busy port or a missing converter are reported via
+    `vim.notify`.
+- `:OrgPreviewToggle` — `:OrgPreviewStop` if the server runs, otherwise
+    `:OrgPreview`.
+- `:OrgPreviewStop` — stop the server, drop the autocmds. Runs on its own
+    when the buffer unloads or Neovim exits. The port stays reserved for
+    this Neovim instance and is reused by the next `:OrgPreview`.
+
+
+==============================================================================
+5. Configuration                                   *org-preview-configuration*
+
+Defaults shown; pass any subset to `setup()`.
+
+>lua
+    require("org-preview").setup({
+      -- Address the server binds to. Keep it on loopback unless you know
+      -- why not: the page is served without authentication.
+      host = "127.0.0.1",
+      -- 0 picks a free port on the first :OrgPreview and keeps it for the
+      -- rest of this Neovim instance, so stopping and starting again keeps
+      -- the same URL (open tabs reconnect) while another Neovim gets its own
+      -- port. Set a number to bind a fixed port instead.
+      port = 0,
+    
+      -- Name of a built-in backend ("pandoc"), or a backend table (see
+      -- Backends below).
+      backend = "pandoc",
+    
+      -- Stylesheet URLs linked from <head>, in order. Local files are not
+      -- served; use a URL the browser can fetch.
+      css = { "https://cdn.jsdelivr.net/npm/water.css@2/out/water.css" },
+    
+      -- Milliseconds of silence after the last change before rendering.
+      debounce_ms = 300,
+    
+      -- Open the browser with vim.ui.open when :OrgPreview starts the
+      -- server. A second :OrgPreview while it runs re-attaches without
+      -- opening another tab.
+      open = true,
+    })
+<
+
+
+==============================================================================
+6. Backends                                             *org-preview-backends*
+
+A backend turns Org source into an HTML fragment (no `<html>` or `<head>`). The
+plugin wraps the fragment into the page, adds the stylesheets and the
+live-reload client. Two shapes are accepted:
+
+- `cmd`: a command that reads Org on stdin and writes HTML to stdout.
+- `render(lines, cb)`: a function that calls `cb(html)` on success or
+    `cb(nil, err)` on failure. `cb` must run on the main loop; wrap it in
+    `vim.schedule` if your code finishes inside a `vim.uv` callback.
+
+>lua
+    -- go-org (github.com/niklasfasching/go-org), untested example
+    require("org-preview").setup({
+      backend = { cmd = { "go-org", "render", "html" } },
+    })
+<
+
+The built-in `pandoc` backend runs pandoc with a template that emits pandoc's
+own syntax-highlighting CSS, a table of contents and the body, nothing else.
+
+
+==============================================================================
+7. Health                                                 *org-preview-health*
+
+`:checkhealth org-preview` reports the Neovim version and whether the
+configured backend command is executable.
+
+
+==============================================================================
+8. Limitations                                       *org-preview-limitations*
+
+- Only the buffer `:OrgPreview` was called in is rendered.
+- No cursor or scroll synchronisation between Neovim and the browser.
+- No agenda views; the preview shows the file as a document.
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:
