@@ -8,6 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-20
+
 ### Added
 
 - `:OrgPreview` / `:OrgPreviewStop` / `:OrgPreviewToggle`: live browser
@@ -20,4 +22,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `:checkhealth org-preview`.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/seflue/org-preview.nvim/commits/HEAD
+[Unreleased]: https://github.com/seflue/org-preview.nvim/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/seflue/org-preview.nvim/commits/v0.1.0
